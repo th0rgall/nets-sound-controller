@@ -7,18 +7,66 @@
  */
 
 import processing.sound.*;
+import java.util.Map;
+import java.util.Set;
+import java.util.Iterator;
 
+Looper lpr;
 Sound s;
 SoundFile[] file, file2;
 
 SoundFile currentDrum;
 SoundFile currentMelody;
 
+// settings
+boolean looping = true;  // whether sounds will loop
+int loopDuration = 7000; // loop duration in ms
+boolean exclusive = true; // whether only one sound of a category is allowed 
+
 int red, green, blue;
+
+class Looper {
+  float loopDur, lastMs = 0;
+  HashMap<String,SoundFile> soundMap = new HashMap<String,SoundFile>();
+  
+  float speed = 1.0, volume = 1.0;
+  
+  
+  Looper(int lD) {
+    loopDur = lD;
+  }
+  
+  // update the looper
+  void update() {
+    float now = millis();
+    // loop over
+    if (now - lastMs >= loopDur) {
+      lastMs = now;
+      Iterator it = soundMap.keySet().iterator();
+      while (it.hasNext()) {
+        String cat = (String) it.next(); // next category
+        play(soundMap.get(cat));
+      }
+    }
+    
+  }
+  
+  // play a SoundFile with standard settings
+  void play(SoundFile soundFile) {
+    soundFile.play(speed, volume);
+  }
+  
+  // Registers the current sound of a category
+  // eg. registerSound("drums", sound);
+  void registerSound(String category, SoundFile sound) {
+      soundMap.put(category, sound);
+  }
+}
 
 void setup() {
   size(640, 360);
   background(255);
+  lpr = new Looper(loopDuration);
 
   // Create an AudioDevice with low buffer size 
   // and create an array containing 5 empty soundfiles
@@ -43,6 +91,7 @@ void setup() {
 
 void draw() {
   background(red, green, blue);
+  lpr.update();
 }
 
 void playDrum(SoundFile sf) {
@@ -66,35 +115,25 @@ void keyPressed() {
   // an octave below the original pitch of the file, 6-0 play at
   // an octave above.
   switch(key) {
-  case '1':
-    file[0].play(1, 1.0);
-    break;
-  case '2':
-    file[1].play(1, 1.0);
-    break;
-  case '3':
-    file[2].play(1, 1.0);
-    break;
-  case '4':
-    file2[0].play(1, 1.0);
-    break;
-  case '5':
-    file2[1].play(1, 1.0);
-    break;
-  case '6':
-    file2[3].play(1, 1.0);
-    break;
-  case '7':
-    file[1].play(2.0, 1.0);
-    break;
-  case '8':
-    file[2].play(2.0, 1.0);
-    break;
-  case '9':
-    file[3].play(2.0, 1.0);
-    break;
-  case '0':
-    file[4].play(2.0, 1.0);
-    break;
+    case '1':
+      //file[0].play(1, 1.0);
+      lpr.registerSound("melody", file[0]);
+      break;
+    case '2':
+      //file[1].play(1, 1.0);
+      lpr.registerSound("melody", file[1]);
+      break;
+    case '3':
+      lpr.registerSound("melody", file[2]);
+      break;
+    case '4':
+      lpr.registerSound("drums", file2[0]);
+      break;
+    case '5':
+      lpr.registerSound("drums", file2[1]);
+      break;
+    case '6':
+      lpr.registerSound("drums", file2[2]);
+      break;
   }
 }
