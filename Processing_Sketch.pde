@@ -13,7 +13,10 @@ import java.util.Iterator;
 
 Looper lpr;
 Sound s;
-SoundFile[] file, file2;
+SoundFile[] melodyFiles = new SoundFile[5];
+SoundFile[] drumFiles = new SoundFile[5];
+String[] melodyStrings = {"PS - die young 133 BPM", "PS - lose my number 140 BPM", "PS - the saddest waterfall 140 BPM" };
+String[] drumStrings = {"140 #1", "140 #8", "140 #10"};
 
 SoundFile currentDrum;
 SoundFile currentMelody;
@@ -27,7 +30,9 @@ int red, green, blue;
 
 class Looper {
   float loopDur, lastMs = 0;
-  HashMap<String,SoundFile> soundMap = new HashMap<String,SoundFile>();
+  HashMap<String,SoundFile> liveMap = new HashMap<String,SoundFile>();
+  HashMap<String,SoundFile> fixedMap = new HashMap<String,SoundFile>();
+
   
   float speed = 1.0, volume = 1.0;
   
@@ -36,18 +41,34 @@ class Looper {
     loopDur = lD;
   }
   
+  // get the remaining loopt time in ms
+  float getElapsedLoopTime() {
+    return millis() - lastMs;
+  }
+  
+  // get remaining loop time in ms
+  float getRemainingTime() {
+    return loopDur - getElapsedLoopTime();
+  }
   // update the looper
   void update() {
     float now = millis();
     // loop over
     if (now - lastMs >= loopDur) {
       lastMs = now;
-      Iterator it = soundMap.keySet().iterator();
+      // copy live map config to fixed to-play map
+      fixedMap = (HashMap<String,SoundFile>) liveMap.clone();
+      // loop through to-play map 
+      Iterator it = fixedMap.keySet().iterator();
       while (it.hasNext()) {
         String cat = (String) it.next(); // next category
-        play(soundMap.get(cat));
+        SoundFile sF = fixedMap.get(cat); // currently playing soundfile
+        if (exclusive) {
+          sF.stop();
+        }
+        play(liveMap.get(cat)); // play new sound
       }
-    }
+    } 
     
   }
   
@@ -59,8 +80,14 @@ class Looper {
   // Registers the current sound of a category
   // eg. registerSound("drums", sound);
   void registerSound(String category, SoundFile sound) {
-      soundMap.put(category, sound);
+      liveMap.put(category, sound);
+      //// check for jumpstart possibility - start immediately if no currently playing song
+      //if (fixedMap.get(category) == null) {
+      //  sound.jump(getElapsedLoopTime()/1000);
+      //  play(sound);
+      //}
   }
+  
 }
 
 void setup() {
@@ -72,38 +99,25 @@ void setup() {
   // and create an array containing 5 empty soundfiles
   //device = new AudioDevice(this, 48000, 32);
   s = new Sound(this);
-  file = new SoundFile[5];
-  file2 = new SoundFile[5];
-  
-  String[] melodyFiles = {"PS - die young 133 BPM", "PS - lose my number 140 BPM", "PS - the saddest waterfall 140 BPM" };
-  String[] drumFiles = {"140 #1", "140 #8", "140 #10"};
 
   // Load 5 soundfiles from a folder in a for loop. 
-  for (int i = 0; i < melodyFiles.length; i++) {
-    file[i] = new SoundFile(this, melodyFiles[i] + ".wav");
+  for (int i = 0; i < melodyStrings.length; i++) {
+    melodyFiles[i] = new SoundFile(this, melodyStrings[i] + ".wav");
   }
   
   // Load 5 soundfiles from a folder in a for loop. 
-  for (int i = 0; i < drumFiles.length; i++) {
-    file2[i] = new SoundFile(this, drumFiles[i] + ".wav");
+  for (int i = 0; i < drumStrings.length; i++) {
+    drumFiles[i] = new SoundFile(this, drumStrings[i] + ".wav");
   }
 }
 
 void draw() {
   background(red, green, blue);
   lpr.update();
+  textSize(32);
+  text(Float.toString(lpr.getRemainingTime()), width/2, height/2);
+  
 }
-
-void playDrum(SoundFile sf) {
-  if (currentDrum != null) currentDrum.stop();
-  sf.play(1, 1);
-}
-
-void playMelody(SoundFile sf) {
-  if (currentDrum != null) currentDrum.stop();
-  sf.play(1, 1);
-}
-
 
 void keyPressed() {
   // Set a random background color each time you hit then number keys
@@ -116,24 +130,24 @@ void keyPressed() {
   // an octave above.
   switch(key) {
     case '1':
-      //file[0].play(1, 1.0);
-      lpr.registerSound("melody", file[0]);
+      //melodyFiles[0].play(1, 1.0);
+      lpr.registerSound("melody", melodyFiles[0]);
       break;
     case '2':
-      //file[1].play(1, 1.0);
-      lpr.registerSound("melody", file[1]);
+      //melodyFiles[1].play(1, 1.0);
+      lpr.registerSound("melody", melodyFiles[1]);
       break;
     case '3':
-      lpr.registerSound("melody", file[2]);
+      lpr.registerSound("melody", melodyFiles[2]);
       break;
     case '4':
-      lpr.registerSound("drums", file2[0]);
+      lpr.registerSound("drums", drumFiles[0]);
       break;
     case '5':
-      lpr.registerSound("drums", file2[1]);
+      lpr.registerSound("drums", drumFiles[1]);
       break;
     case '6':
-      lpr.registerSound("drums", file2[2]);
+      lpr.registerSound("drums", drumFiles[2]);
       break;
   }
 }
