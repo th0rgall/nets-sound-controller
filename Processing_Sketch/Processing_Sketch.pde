@@ -106,6 +106,7 @@ class Looper {
 
   // Registers the current sound of a category
   // eg. registerSound("drums", sound);
+  // null will disable the sound
   void registerSound(String category, SoundFile sound) {
     liveMap.put(category, sound);
     //// check for jumpstart possibility - start immediately if no currently playing song
@@ -151,9 +152,13 @@ void setup() {
   // is Serial.list()[0].
   // On Windows machines, this generally opens COM1.
   // Open whatever port is the one you're using.
-  String portName = Serial.list()[0]; //change the 0 to a 1 or 2 etc. to match your port
+  //String portName = Serial.list()[0]; //change the 0 to a 1 or 2 etc. to match your port
+  
+  String portName = "/dev/tty.usbmodem145301";
   sPort = new Serial(this, portName, 9600);
-  sPort.buffer(3);
+  delay(1000);
+  
+  //sPort.buffer(3);
   
   // -------- SETUP test
   
@@ -163,10 +168,10 @@ void setup() {
 
 
 void draw() {
-  if ( sPort.available() > 0) 
-  {  // If data is available,
-    val = sPort.readStringUntil('\n'); // read it and store it in val
-  } 
+//  if ( sPort.available() > 0) 
+// {  // If data is available,
+//    val = sPort.readStringUntil('\n'); // read it and store it in val
+//  } 
 
   // println(val); //print it out in the console
 
@@ -175,6 +180,8 @@ void draw() {
     for (int j = 0; j < capModel.length; j++) {
       if (capModel[i][j] == true) {
         lpr.registerSound(Integer.toString(i), soundModel[i][j]);
+      } else {
+        lpr.registerSound(Integer.toString(i), null);
       }
     }
   }
@@ -198,13 +205,17 @@ void serialEvent(Serial se) {
   //  val = se.readStringUntil('\n'); // read it and store it in val
 
   //}
-  while (se.available() > 2) {
-    int column = se.read();
-    int row = se.read();
-    int on = se.read();
-
-    // change on model
-    setModel(column, row, (on == 1) ? true : false);
+  if (se != null) {
+    while (se.available() >= 3) {
+      int column = se.read();
+      int row = se.read();
+      int on = se.read();
+      println("IN:");
+      println(column, row, on);
+  
+      // change on model
+      setModel(column, row, (on == 1) ? true : false);
+    }
   }
 }
 

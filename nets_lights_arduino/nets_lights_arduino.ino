@@ -18,6 +18,12 @@ void setup()
    
 }
 
+void writeToSerial(byte col, byte row, byte on) {
+  Serial.write(col);
+  Serial.write(row);
+  Serial.write(on);
+}
+
 void loop()                    
 {
 
@@ -26,11 +32,11 @@ void loop()
    if(sensor1 >= 1000)
    {
     digitalWrite(4,HIGH);
-    Serial.write("001");
+    writeToSerial(0, 0, 1);
    }
    else{
     digitalWrite(4,LOW);
-    Serial.write("000");
+    writeToSerial(0, 0, 0);
 
    }  
 
@@ -38,34 +44,36 @@ long sensor2 =  cs_5_6.capacitiveSensor(50);
    if(sensor2 >= 1000)
    {
     digitalWrite(7,HIGH);
-    Serial.write("011");
+    writeToSerial(0, 1, 1);
 
    }
    else{
     digitalWrite(7,LOW);
-    Serial.write("010");
+    writeToSerial(0, 1, 0);
    }  
 
 long sensor3 =  cs_8_9.capacitiveSensor(50);
    if(sensor3 >= 2000)
    {
     digitalWrite(10,HIGH);
-    Serial.write("101");
+    writeToSerial(1, 0, 1);
    }
    else{
     digitalWrite(10,LOW);
-    Serial.write("100");
+    writeToSerial(1, 0, 0);
    }  
 
    long sensor4 =  cs_11_12.capacitiveSensor(50);
-Serial.println(sensor4);
+   
    if(sensor4 >= 1000)
    {
     digitalWrite(13,HIGH);
-    Serial.write("111");
+    writeToSerial(1, 1, 1);
    }
    else{
     digitalWrite(13,LOW);
-    Serial.write("110");
-   } 
+    writeToSerial(1, 1, 0);
+   }
+
+   delay(250);
 }
