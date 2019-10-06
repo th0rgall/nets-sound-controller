@@ -96,11 +96,11 @@ class Looper {
       }
       
       // reset capmodel
-      for (int i = 0; i < capModel.length; i++) {
-        for (int j = 0; j < capModel.length; j++) {
-          capModel[i][j] = false;
-        }
-      }
+      //for (int i = 0; i < capModel.length; i++) {
+      //  for (int j = 0; j < capModel.length; j++) {
+      //    capModel[i][j] = false;
+      //  }
+      //}
     }
   }
 
@@ -208,7 +208,6 @@ void draw() {
         lpr.registerSound(Integer.toString(i), soundModel[i][j]);
       } else {
         lpr.deregisterSound(Integer.toString(i), soundModel[i][j]);
-  
       }
     }
   }
@@ -247,18 +246,18 @@ void serialEvent(Serial se) {
 }
 
 void setModel(int col, int row, Boolean value) {
-  // reset all lalala
+  // reset all in same column! (only 1 instrument at the same time = exclusivity)
   for (int i = 0; i < capModel[col].length; i++) {
     capModel[col][i] = false;
   }
-  // change
+  
   capModel[col][row] = value;
 }
 
 
 void keyPressed() {
   // Set a random background color each time you hit then number keys
-  if (key >= 0 && key <= 4) {
+  if (key >= '0' && key <= '4') {
     red=int(random(255));
     green=int(random(255));
     blue=int(random(255));
@@ -293,6 +292,7 @@ void keyPressed() {
   //  lpr.registerSound("drums", drumFiles[2]);
   //  break;
   }
+}
 
 void keyReleased() {
   // Set a random background color each time you hit then number keys
