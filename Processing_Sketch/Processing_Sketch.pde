@@ -87,34 +87,58 @@ class Looper {
       // assumed live will always have more info than previous fixe
       while (it.hasNext()) {
         String cat = (String) it.next(); // next category
-        SoundFile sF = fixedMap.get(cat); // currently playing soundfile
-        if (exclusive && sF != null) {
+        SoundFile sF = liveMap.get(cat); 
+        if (sF != null) { // if not null, play or repeat
           sF.stop();
+          sF.cue(0);
+          play(liveMap.get(cat)); // play new sound
         }
-        play(liveMap.get(cat)); // play new sound
       }
       
-      // copy live map config to fixed to-play map
-      fixedMap = (HashMap<String, SoundFile>) liveMap.clone();
+      // reset capmodel
+      for (int i = 0; i < capModel.length; i++) {
+        for (int j = 0; j < capModel.length; j++) {
+          capModel[i][j] = false;
+        }
+      }
     }
   }
 
   // play a SoundFile with standard settings
   void play(SoundFile soundFile) {
-    soundFile.play(speed, volume);
+    if (soundFile != null) soundFile.play(speed, volume);
   }
 
   // Registers the current sound of a category
   // eg. registerSound("drums", sound);
   // null will disable the sound
   void registerSound(String category, SoundFile sound) {
-    liveMap.put(category, sound);
-    //// check for jumpstart possibility - start immediately if no currently playing song
-    //if (fixedMap.get(category) == null) {
-    //  sound.jump(getElapsedLoopTime()/1000);
-    //  play(sound);
-    //}
+    // check for jumpstart possibility - start immediately if no currently playing song
+    if (liveMap.get(category) != sound && liveMap.get(category) != null) { // if not already there (else stay looping)
+      liveMap.get(category).stop();
+      liveMap.get(category).cue(0);
+    }
+    
+    if (liveMap.get(category) != sound) {
+      liveMap.put(category, sound);
+      float cueTime = getElapsedLoopTime()/1000;
+      if (cueTime < sound.duration()) {
+        sound.cue(cueTime);
+        play(sound);
+      }
+    }
   }
+  
+  void deregisterSound(String category, SoundFile sound) {
+    if (liveMap.get(category) != null && liveMap.get(category) == sound) {
+      SoundFile sf = liveMap.get(category);
+      sf.stop();
+      liveMap.put(category, null);
+    }
+  }
+  
+  
+  // class }
 }
 
 // SETUP 
@@ -155,7 +179,7 @@ void setup() {
   //String portName = Serial.list()[0]; //change the 0 to a 1 or 2 etc. to match your port
   
   String portName = "/dev/tty.usbmodem145301";
-  sPort = new Serial(this, portName, 9600);
+  //sPort = new Serial(this, portName, 9600);
   delay(1000);
   
   //sPort.buffer(3);
@@ -174,14 +198,17 @@ void draw() {
 //  } 
 
   // println(val); //print it out in the console
-
+  
   // ---- read model and adjust soundModel ----
   for (int i = 0; i < capModel.length; i++) {
     for (int j = 0; j < capModel.length; j++) {
+            
+      // activate selectively
       if (capModel[i][j] == true) {
         lpr.registerSound(Integer.toString(i), soundModel[i][j]);
       } else {
-        lpr.registerSound(Integer.toString(i), null);
+        lpr.deregisterSound(Integer.toString(i), soundModel[i][j]);
+  
       }
     }
   }
@@ -231,9 +258,11 @@ void setModel(int col, int row, Boolean value) {
 
 void keyPressed() {
   // Set a random background color each time you hit then number keys
-  red=int(random(255));
-  green=int(random(255));
-  blue=int(random(255));
+  if (key >= 0 && key <= 4) {
+    red=int(random(255));
+    green=int(random(255));
+    blue=int(random(255));
+  }
 
   // Assign a sound to each number on your keyboard. 1-5 play at
   // an octave below the original pitch of the file, 6-0 play at
@@ -257,11 +286,49 @@ void keyPressed() {
     //lpr.registerSound("drums", drumFiles[0]);
     setModel(1, 1, true);
     break;
-  case '5':
-    lpr.registerSound("drums", drumFiles[1]);
+  //case '5':
+  //  lpr.registerSound("drums", drumFiles[1]);
+  //  break;
+  //case '6':
+  //  lpr.registerSound("drums", drumFiles[2]);
+  //  break;
+  }
+
+void keyReleased() {
+  // Set a random background color each time you hit then number keys
+  if (key >= 0 && key <= 4) {
+    red=int(random(255));
+    green=int(random(255));
+    blue=int(random(255));
+  }
+
+  // Assign a sound to each number on your keyboard. 1-5 play at
+  // an octave below the original pitch of the file, 6-0 play at
+  // an octave above.
+  switch(key) {
+  case '1':
+    //melodyFiles[0].play(1, 1.0);
+    //lpr.registerSound("melody", melodyFiles[0]);
+    setModel(0, 0, false);
     break;
-  case '6':
-    lpr.registerSound("drums", drumFiles[2]);
+  case '2':
+    //melodyFiles[1].play(1, 1.0);
+    //lpr.registerSound("melody", melodyFiles[1]);
+    setModel(0, 1, false);
     break;
+  case '3':
+    //lpr.registerSound("melody", melodyFiles[2]);
+    setModel(1, 0, false);
+    break;
+  case '4':
+    //lpr.registerSound("drums", drumFiles[0]);
+    setModel(1, 1, false);
+    break;
+  //case '5':
+  //  lpr.registerSound("drums", drumFiles[1]);
+  //  break;
+  //case '6':
+  //  lpr.registerSound("drums", drumFiles[2]);
+  //  break;
   }
 }
